@@ -15,6 +15,11 @@ public class BlogDetailsViewModel
     public string Author { get; set; }
     public bool Visible { get; set; }
 
+    public bool Liked { get; set; }
+
+    public string CommentDescription { get; set; }
+    public IEnumerable<BlogComment> Comments{ get; set; }
+
     public ICollection<Tag> Tags { get; set; }
 
     public int TotalLikes { get; set; }

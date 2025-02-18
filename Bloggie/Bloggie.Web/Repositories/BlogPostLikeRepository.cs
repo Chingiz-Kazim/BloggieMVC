@@ -21,6 +21,11 @@ public class BlogPostLikeRepository : IBlogPostLikeRepository
         return blogPostLike;
     }
 
+    public async Task<IEnumerable<BlogPostLike>> GetLikesForBlog(Guid blogPostId)
+    {
+        return await _bloggieDbContext.BlogPostLikes.Where(i => i.BlogPostId == blogPostId).ToListAsync();
+    }
+
     public async Task<int> GetTotalLikes(Guid blogPostId)
     {
         return await _bloggieDbContext.BlogPostLikes.CountAsync(l => l.BlogPostId == blogPostId);

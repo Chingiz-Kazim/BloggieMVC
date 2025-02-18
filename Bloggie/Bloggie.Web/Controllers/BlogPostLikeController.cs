@@ -32,4 +32,12 @@ public class BlogPostLikeController : ControllerBase
 
         return Ok();
     }
+    [HttpGet]
+    [Route("{blogPostId:Guid}/totalLikes")]
+    public async Task<IActionResult> GetTotalLikesForBlog([FromRoute] Guid blogPostId)
+    {
+        var totalLikes = await _blogPostLikeRepository.GetTotalLikes(blogPostId);
+
+        return Ok(totalLikes);
+    }
 }
