@@ -13,9 +13,35 @@ public class TagRepository : ITagRepository
     {
         _bloggieDbContext = bloggieDbContext;
     }
-    public async Task<IEnumerable<Tag>> GetAllAsync()
+    public async Task<IEnumerable<Tag>> GetAllAsync(string? searchQuery, string? sortBy, string? sortDirection, int pageNumber = 1, int pageSize = 100)
     {
-        return await _bloggieDbContext.Tags.ToListAsync();
+        var query = _bloggieDbContext.Tags.AsQueryable();
+        //filtering
+        if (string.IsNullOrWhiteSpace(searchQuery) == false)
+        {
+            query = query.Where(x => x.Name.Contains(searchQuery) ||
+                                     x.DisplayName.Contains(searchQuery));
+        }
+        //sorting
+        if (string.IsNullOrWhiteSpace(sortBy) == false)
+        {
+            var isDesc = string.Equals(sortDirection, "Desc", StringComparison.OrdinalIgnoreCase);
+
+            if (string.Equals(sortBy, "Name", StringComparison.OrdinalIgnoreCase))
+            {
+                query = isDesc ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name);
+            }
+            if (string.Equals(sortBy, "DisplayName", StringComparison.OrdinalIgnoreCase))
+            {
+                query = isDesc ? query.OrderByDescending(x => x.DisplayName) : query.OrderBy(x => x.DisplayName);
+            }
+        }
+        //pagination
+        var skipResults = (pageNumber - 1) * pageSize;
+        query = query.Skip(skipResults).Take(pageSize);
+
+        return await query.ToListAsync();
+        //return await _bloggieDbContext.Tags.ToListAsync();
     }
 
     public Task<Tag?> GetAsync(Guid id)
@@ -54,5 +80,10 @@ public class TagRepository : ITagRepository
             return existingTag;
         }
         return null;
+    }
+
+    public async Task<int> CountAsync()
+    {
+        return await _bloggieDbContext.Tags.CountAsync();
     }
 }

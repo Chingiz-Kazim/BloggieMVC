@@ -1,12 +1,8 @@
-﻿using Bloggie.Web.Data;
-using Bloggie.Web.Models.Domain;
+﻿using Bloggie.Web.Models.Domain;
 using Bloggie.Web.Models.ViewModels;
 using Bloggie.Web.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ActionConstraints;
-using Microsoft.EntityFrameworkCore;
-using System.Runtime.CompilerServices;
 
 namespace Bloggie.Web.Controllers;
 
@@ -29,6 +25,13 @@ public class AdminTagsController : Controller
     [HttpPost]
     public async Task<IActionResult> Add(AddTagRequest addTagRequest)
     {
+        ValidateAddTagRequest(addTagRequest);
+
+        if (ModelState.IsValid == false)
+        {
+            return View();
+        }
+
         var tag = new Tag
         {
             Name = addTagRequest.Name,
@@ -41,9 +44,27 @@ public class AdminTagsController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> List()
+    public async Task<IActionResult> List(string? searchQuery, string? sortBy, string? sortDirection, int pageSize = 4, int pageNumber = 1)
     {
-        var tags = await tagRepository.GetAllAsync();
+        var totalRecords = await tagRepository.CountAsync();
+        var totalPages = Math.Ceiling((decimal)totalRecords / pageSize);
+
+        if (pageNumber > totalPages)
+        {
+            pageNumber--;
+        }
+        if (pageNumber < 1)
+        {
+            pageNumber++;
+        }
+
+        ViewBag.TotalPages = totalPages;
+        ViewBag.PageSize = pageSize;
+        ViewBag.PageNumber = pageNumber;
+        ViewBag.SearchQuery = searchQuery;
+        ViewBag.SortBy = sortBy;
+        ViewBag.SortDirection = sortDirection;
+        var tags = await tagRepository.GetAllAsync(searchQuery, sortBy, sortDirection, pageNumber, pageSize);
 
         return View(tags);
     }
@@ -99,5 +120,16 @@ public class AdminTagsController : Controller
             return RedirectToAction("List");
         }
         return RedirectToAction("Edit", new { id = editTagRequest.Id });
+    }
+
+    private void ValidateAddTagRequest(AddTagRequest request)
+    {
+        if (request.Name is not null && request.DisplayName is not null)
+        {
+            if (request.Name == request.DisplayName)
+            {
+                ModelState.AddModelError("DisplayName", "Name cannot be the same as DisplayName!");
+            }
+        }
     }
 }
